@@ -4,14 +4,14 @@
 using namespace std;
 
 // Color codes
-#define RESET   "\033[0m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-#define CYAN    "\033[36m"
+#define RESET "\033[0m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define CYAN "\033[36m"
 #define MAGENTA "\033[35m"
-#define BOLD    "\033[1m"
+#define BOLD "\033[1m"
 
 class Account
 {
@@ -28,17 +28,20 @@ public:
         this->userName = name;
         this->mobileNumber = mobilenumber;
         this->accountNumber.push_back(accountnumber);
-        this->balance.push_back(0);  
+        this->balance.push_back(0);
         this->totalAccount++;
     }
 
-    Account(string name, float mobilenumber, float accountnumber , float& initialBalance  )
-        : userName(name), mobileNumber(mobilenumber)   
+    Account(string name, float mobilenumber, float accountnumber, float initialBalance)
+        : userName(name), mobileNumber(mobilenumber), totalAccount(1)
     {
+
         this->accountNumber.push_back(accountnumber);
-        this->balance.push_back(initialBalance);  
-        this->totalAccount = 1;
+        this->balance.clear();
+        this->balance.push_back(initialBalance);
     }
+
+   
 
     string getUserName() const
     {
@@ -50,12 +53,12 @@ public:
         return this->mobileNumber;
     }
 
-    vector<float> getAccountNumbers() const
+    vector<float> &getAccountNumbers()  
     {
         return this->accountNumber;
     }
 
-    vector<float>& getBalance()
+    vector<float> &getBalance()
     {
         return this->balance;
     }
@@ -65,7 +68,7 @@ public:
         cout << CYAN << "Username: " << RESET << this->getUserName() << endl;
         cout << CYAN << "Mobile Number: " << RESET << this->getMobileNumber() << endl;
         cout << CYAN << "Accounts: " << RESET;
-      for(int i = 0; i < this->accountNumber.size(); i++)
+        for (int i = 0; i < this->accountNumber.size(); i++)
         {
             cout << this->accountNumber[i] << " ";
             cout << CYAN << "Balance: " << RESET << this->balance[i] << " " << endl;
@@ -104,6 +107,20 @@ public:
         if (this->check(mobileNumber))
         {
             cout << YELLOW << "You already have an account." << RESET << endl;
+            cout << GREEN << " You are making another account with the same mobile number." << RESET << endl;
+            int choice;
+            cout << "Do you want to continue? (1 for Yes, 0 for No): ";
+            cin >> choice;
+            if (choice == 0)
+            {
+                cout << RED << "Account creation cancelled." << RESET << endl;
+                return;
+            }
+            cout << GREEN << "Continuing with account creation..." << RESET << endl;
+            cin.ignore();
+            name = this->accounts[0].getUserName();  
+            makeAnotherAccount(name, mobileNumber);
+            cout << GREEN << "Account created successfully!" << RESET << endl;
             return;
         }
         cout << BLUE << "Enter Account Number: " << RESET;
@@ -111,7 +128,7 @@ public:
         cin.ignore();
         cout << BLUE << "Enter Username: " << RESET;
         getline(cin, name);
-        cout << "Enter Initial Balance: ";  
+        cout << "Enter Initial Balance: ";
         float initialBalance;
         cin >> initialBalance;
         if (initialBalance < 0)
@@ -120,9 +137,9 @@ public:
             return;
         }
 
-
-        this->accounts.push_back(Account(name, mobileNumber, accountNumber , initialBalance));
-        cout << GREEN << "Account added successfully!\n" << RESET;
+        this->accounts.push_back(Account(name, mobileNumber, accountNumber, initialBalance));
+        cout << GREEN << "Account added successfully!\n"
+             << RESET;
     }
 
     int login()
@@ -136,7 +153,7 @@ public:
             cout << RED << "You don't have an account. Create an account." << RESET << endl;
             return -1;
         }
-        if(mobileNumber < 0)
+        if (mobileNumber < 0)
         {
             cout << RED << "Mobile number cannot be negative." << RESET << endl;
             return -1;
@@ -191,6 +208,7 @@ public:
 
         cout << BLUE << "How much money do you want to withdraw?" << RESET << endl;
         cin >> amount;
+        cout << "You are withdrawing " << amount << " from your account." << endl;
 
         if (amount > this->accounts[this->index].getBalance()[this->choice] || amount < 0)
         {
@@ -198,7 +216,9 @@ public:
             return -1;
         }
         this->accounts[this->index].getBalance()[this->choice] -= amount;
-        cout << GREEN << "You have " << this->accounts[this->index].getBalance()[this->choice] << " left." << RESET << endl;
+        cout << GREEN << "You have successfully withdrawn " << amount << " from your account." << RESET << endl;
+        cout << CYAN << "Your new balance is: " << this->accounts[this->index].getBalance()[this->choice] << RESET << endl;
+        cout << GREEN << "Thank you for using our service!" << RESET << endl;
         return 0;
     }
 
@@ -211,6 +231,49 @@ public:
             cout << YELLOW << "-----------------------------" << RESET << endl;
         }
     }
+
+    void makeAnotherAccount(string &name, float &mobileNumber)
+    {
+         for (int i = 0; i < this->accounts.size(); i++)
+        {
+            if (this->accounts.at(i).getMobileNumber() == mobileNumber)
+            {
+                this->index = i;
+                break;
+            }
+        }
+         
+     
+         
+       
+
+        
+
+        float accountnumber;
+        float balance;
+        cout << "Making another account username: " << name << endl;
+        cout << BLUE << "Enter Account Number: " << RESET;
+        cin >> accountnumber;
+        for (int i = 0; i < this->accounts[index].getAccountNumbers().size(); i++)
+        {
+            if ( this->accounts[index].getAccountNumbers()[i] == accountnumber)
+            {
+                cout << RED << "Account number already exists. Please try again." << RESET << endl;
+                return;
+            }
+        }
+        
+        cout << "Enter Initial Balance: ";
+        cin >> balance;
+        if (balance < 0)
+        {
+            cout << RED << "Initial balance cannot be negative." << RESET << endl;
+            return;
+        }
+
+        this->accounts[this->index].getAccountNumbers().push_back(accountnumber);
+        this->accounts[this->index].getBalance().push_back(balance);
+    }
 };
 
 int main()
@@ -222,7 +285,8 @@ int main()
     cout << "==============================" << RESET << endl;
     do
     {
-        cout << BOLD << "\nMenu:\n" << RESET;
+        cout << BOLD << "\nMenu:\n"
+             << RESET;
         cout << BLUE << "1. Add Account\n";
         cout << "2. Login\n";
         cout << "0. Exit\n";
@@ -231,29 +295,27 @@ int main()
 
         switch (choice)
         {
-            case 1:
-                bank.addAccount();
-                break;
-            case 2:
-                if (bank.login() == -1)
-                {
-                    cout << RED << "Login failed. Please try again." << RESET << endl;
-                }
-                break;
-            case 0:
-                cout << GREEN << "Thank you for using our service!" << RESET << endl;
-                break;
-            default:
-                cout << RED << "Invalid choice. Please try again." << RESET << endl;
+        case 1:
+            bank.addAccount();
+            break;
+        case 2:
+            if (bank.login() == -1)
+            {
+                cout << RED << "Login failed. Please try again." << RESET << endl;
+            }
+            break;
+        case 0:
+            cout << GREEN << "Thank you for using our service!" << RESET << endl;
+            break;
+        default:
+            cout << RED << "Invalid choice. Please try again." << RESET << endl;
         }
-    } while (choice != 0);  
+    } while (choice != 0);
     return 0;
 }
+
 // here bugs are
-// 1. The initial balance is not being set correctly when creating a new account.                                                       done
-// 2. The withdraw function does not update the balance correctly.
-// 3. The login function does not handle the case where the user selects an invalid account number.                                     done
-// 4. The displayAccounts function does not show the balance for each account.                                                          done        
+
 // 5. The program does not handle the case where the user tries to withdraw more than their balance.
 // 6. The program does not handle the case where the user tries to create an account with an existing mobile number.
 // 7. The program does not handle the case where the user tries to create an account with an existing account number.
@@ -271,4 +333,3 @@ int main()
 // 19. The program does not handle the case where the user tries to add an account with a zero initial balance.
 // 20. The program does not handle the case where the user tries to add an account with a negative mobile number.
 // 21. The program does not handle the case where the user tries to add an account with a negative account number.
- 
