@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <random>
 using namespace std;
 
 // Color codes
@@ -21,45 +22,45 @@ private:
     string mobileNumber;
     vector<string> accountNumber;
     vector<int> Pin;
-    vector<float> balance = {0}; 
+    vector<float> balance;
 
 public:
-    void setDetails(string &name, float &mobilenumber, string &accountnumber , int& pin)
+    void setDetails(string &name, float &mobilenumber, string &accountnumber, int &pin)
     {
         this->userName = name;
         this->mobileNumber = mobilenumber;
         this->accountNumber.push_back(accountnumber);
-        this->Pin.push_back(pin) ; 
+        this->Pin.push_back(pin);
         this->totalAccount++;
     }
 
-    Account(string name, string mobilenumber, string accountnumber, float initialBalance , int pin)
+    Account(string name, string mobilenumber, string accountnumber, float initialBalance, int pin)
         : userName(name), mobileNumber(mobilenumber), totalAccount(1)
     {
-        if (initialBalance < 0)
+        if (initialBalance < 0 || initialBalance == 0)
         {
             cout << RED << "Initial balance cannot be negative." << RESET << endl;
             return;
         }
-        if(pin < 0 || pin > 9999 || pin < 1000 ) 
+        if (pin < 0 || pin > 9999 || pin < 1000)
         {
             cout << RED << "Enter the valid pin" << RESET << endl;
             return;
         }
         this->accountNumber.push_back(accountnumber);
-        this->balance.push_back(initialBalance);
-        this->Pin.push_back(pin) ;
+        this->balance.push_back(initialBalance) ; 
+        this->Pin.push_back(pin);
     }
-    
-    vector<int> setPin(int pin)
+
+    bool setPin(int pin)
     {
-        if(pin < 0 || pin > 9999 || pin < 1000 ) 
+        if (pin < 0 || pin > 9999 || pin < 1000)
         {
             cout << RED << "Enter the valid pin" << RESET << endl;
-            return ;
+            return false;
         }
         this->Pin.push_back(pin);
-        return this->Pin;
+        return true ;
     }
 
     string getUserName() const
@@ -84,6 +85,25 @@ public:
     {
         return this->balance;
     }
+    int changePin(int oldPin, int newPin)
+    {
+        if (oldPin < 0 || oldPin > 9999 || oldPin < 1000 || newPin < 0 || newPin > 9999 || newPin < 1000)
+        {
+            cout << RED << "Enter the valid pin" << RESET << endl;
+            return -1;
+        }
+        for (int i = 0; i < this->Pin.size(); i++)
+        {
+            if (this->Pin[i] == oldPin)
+            {
+                this->Pin[i] = newPin;
+                cout << GREEN << "Pin changed successfully!" << RESET << endl;
+                return 0;
+            }
+        }
+        cout << RED << "Old pin does not match." << RESET << endl;
+        return -1;
+    }
 
     void display() const
     {
@@ -105,6 +125,7 @@ private:
     vector<Account> accounts;
     int index;
     int choice;
+    vector<string> universalAccounts;
 
 public:
     bool check(string num)
@@ -137,6 +158,7 @@ public:
     }
 
     void makeAnotherAccount(string &name, string &mobileNumber);
+    string genrateAccountNumber();
 };
 
 void Bank::addAccount()
@@ -167,11 +189,11 @@ void Bank::addAccount()
         cout << GREEN << "Account created successfully!" << RESET << endl;
         return;
     }
-    cout << BLUE << "Enter Account Number: " << RESET;
-    cin >> accountNumber;
-    
+    accountNumber = genrateAccountNumber();
+    cout << BLUE << "Your Account Number is: " << accountNumber << "\n" << RESET;
+
     cout << BLUE << "Enter Username: " << RESET;
-    getline(cin, name);
+    cin >> name;
     cout << BLUE << "Enter Pin: " << RESET;
     cin >> pin;
     cout << "Enter Initial Balance: ";
@@ -183,7 +205,8 @@ void Bank::addAccount()
         return;
     }
 
-    this->accounts.push_back(Account(name, mobileNumber, accountNumber, initialBalance , pin));
+    this->accounts.push_back(Account(name, mobileNumber, accountNumber, initialBalance, pin));
+    this->universalAccounts.push_back(accountNumber);
     cout << GREEN << "Account added successfully!\n"
          << RESET;
 }
@@ -222,13 +245,19 @@ int Bank::login()
 
     cin >> this->choice;
     --this->choice;
-    cout << GREEN << "Your current balance is " << this->accounts[this->index].getBalance()[this->choice] << RESET << endl;
+    cout << GREEN << "Your current balance is " << this->accounts.at(this->index).getBalance().at(this->choice) << RESET << endl;
     cout << CYAN << "You are logged in successfully!" << RESET << endl;
     cout << "Choose an option:\n";
     cout << "1. Withdraw\n";
     cout << "2. Display Account Details\n";
+    cout << "3. Change Pin\n";
+    cout << "0. Exit\n";
     int option;
-    cin >> option;
+    do
+    {
+    cout << YELLOW << "Enter your option: " << RESET;
+        cin >> option;
+    
     if (option == 1)
     {
         this->withdraw();
@@ -238,12 +267,33 @@ int Bank::login()
     {
         this->accounts[this->index].display();
     }
+    else if (option == 3)
+    {
+        int oldPin, newPin;
+        cout << BLUE << "Enter Old Pin: " << RESET;
+        cin >> oldPin;
+        cout << BLUE << "Enter New Pin: " << RESET;
+        cin >> newPin;
+        if (this->accounts[this->index].changePin(oldPin, newPin) == -1)
+        {
+            cout << RED << "Failed to change pin." << RESET << endl;
+            return -1;
+        }
+        cout << GREEN << "Pin changed successfully!" << RESET << endl;
+    }
+    else if (option == 0)
+    {
+        cout << GREEN << "Exiting..." << RESET << endl;
+        return 0;
+    }
     else
     {
         cout << RED << "Invalid option selected." << RESET << endl;
         return -1;
     }
-    cout << GREEN << "Thank you for using our service!" << RESET << endl;
+} while (option != 0 );
+cout << GREEN << "Thank you for using our service!" << RESET << endl; 
+
     return 0;
 }
 
@@ -251,7 +301,7 @@ int Bank::withdraw()
 {
     int amount;
     int pin;
-    
+
     cout << BLUE << "Enter Pin: " << RESET;
     cin >> pin;
     if (pin != this->accounts[this->index].getPin()[choice])
@@ -290,8 +340,9 @@ void Bank::makeAnotherAccount(string &name, string &mobileNumber)
     string accountnumber;
     float balance;
     cout << "Making another account username: " << name << endl;
-    cout << BLUE << "Enter Account Number: " << RESET;
-    cin >> accountnumber;
+    accountnumber = genrateAccountNumber();
+    cout << BLUE << "Your Account Number is: " << accountnumber << "\n" << RESET;
+    
     for (int i = 0; i < this->accounts[index].getAccountNumbers().size(); i++)
     {
         if (this->accounts[index].getAccountNumbers()[i] == accountnumber)
@@ -302,12 +353,11 @@ void Bank::makeAnotherAccount(string &name, string &mobileNumber)
     }
     cout << BLUE << "Enter Pin: " << RESET;
     cin >> pin;
-    if (pin < 0 || pin > 9999 || pin < 1000 ) 
+    if (pin < 0 || pin > 9999 || pin < 1000)
     {
         cout << RED << "Enter the valid pin" << RESET << endl;
         return;
     }
-
 
     cout << "Enter Initial Balance: ";
     cin >> balance;
@@ -320,8 +370,34 @@ void Bank::makeAnotherAccount(string &name, string &mobileNumber)
     this->accounts[this->index].getAccountNumbers().push_back(accountnumber);
     this->accounts[this->index].getBalance().push_back(balance);
     this->accounts[this->index].setPin(pin);
+    this->universalAccounts.push_back(accountnumber);
     cout << GREEN << "Account created successfully!" << RESET << endl;
 }
+
+string Bank::genrateAccountNumber(){
+    string acc = "1234567890";
+    std::random_device rd;
+    std::mt19937 rng(rd());
+back_to_genrateAgain : 
+    for(int i = acc.length() ; i>0 ; i--){
+        std::uniform_int_distribution<int> dist(0 , i);
+        int rand = dist(rng);
+        char temp;
+        temp = acc[i];
+        acc[i] = acc[rand];
+        acc[rand] = temp;
+        
+    }
+    for(int i = 0 ; i<this->universalAccounts.size() ; i++){
+        if(this->universalAccounts.at(i) == acc){
+            goto back_to_genrateAgain ;
+        }
+    }
+    return acc;
+     
+}
+
+
 
 int main()
 {
@@ -332,6 +408,7 @@ int main()
     cout << "==============================" << RESET << endl;
     do
     {
+
         cout << BOLD << "\nMenu:\n"
              << RESET;
         cout << BLUE << "1. Add Account\n";
@@ -351,6 +428,7 @@ int main()
                 cout << RED << "Login failed. Please try again." << RESET << endl;
             }
             break;
+
         case 0:
             cout << GREEN << "Thank you for using our service!" << RESET << endl;
             break;
@@ -358,5 +436,6 @@ int main()
             cout << RED << "Invalid choice. Please try again." << RESET << endl;
         }
     } while (choice != 0);
-    return 0;
+    
+     return 0;
 }
