@@ -146,6 +146,7 @@ public:
     int login();
 
     int withdraw();
+    int transfer();
 
     void displayAccounts() const
     {
@@ -160,6 +161,8 @@ public:
     void makeAnotherAccount(string &name, string &mobileNumber);
     string genrateAccountNumber();
 };
+
+
 
 void Bank::addAccount()
 {
@@ -251,6 +254,7 @@ int Bank::login()
     cout << "1. Withdraw\n";
     cout << "2. Display Account Details\n";
     cout << "3. Change Pin\n";
+    cout << "4. Transfer Money\n";
     cout << "0. Exit\n";
     int option;
     do
@@ -280,6 +284,13 @@ int Bank::login()
             return -1;
         }
         cout << GREEN << "Pin changed successfully!" << RESET << endl;
+    }
+    else if (option == 4)
+    {
+        if (this->transfer() == -1)
+        {
+            cout << RED << "Transfer failed. Please try again." << RESET << endl;
+        }
     }
     else if (option == 0)
     {
@@ -375,11 +386,21 @@ void Bank::makeAnotherAccount(string &name, string &mobileNumber)
 }
 
 string Bank::genrateAccountNumber(){
+  char rowAccount[10] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+
     string acc = "1234567890";
     std::random_device rd;
     std::mt19937 rng(rd());
 back_to_genrateAgain : 
-    for(int i = acc.length() ; i>0 ; i--){
+    for(int i = 0 ; i<10;i++){
+        std::uniform_int_distribution<int> dist(0 , 9);
+        for (int i = 0; i < 10; i++) {
+        std::uniform_int_distribution<int> dist(0, 9);
+        acc[i] = rowAccount[dist(rng)];
+    }
+
+    }
+    for(int i = acc.length() -1; i>0 ; i--){
         std::uniform_int_distribution<int> dist(0 , i);
         int rand = dist(rng);
         char temp;
@@ -388,16 +409,75 @@ back_to_genrateAgain :
         acc[rand] = temp;
         
     }
+      std::shuffle(acc.begin(), acc.end(), rng);
     for(int i = 0 ; i<this->universalAccounts.size() ; i++){
         if(this->universalAccounts.at(i) == acc){
             goto back_to_genrateAgain ;
         }
     }
+     
     return acc;
      
 }
 
+int Bank::transfer()
+{
+    string receiverAccountNumber;
+    float amount;
+    int pin;
+    int Accountindex;
+    int accindex ; 
+    cout<< BLUE << "Enter the receiver's account number: " << RESET;
+    cin >> receiverAccountNumber;
+    if(receiverAccountNumber.size() < 10 || receiverAccountNumber.size() > 10)
+    {
+        cout << RED << "Invalid account number. Please try again." << RESET << endl;
+        return -1;
+    }
+    for(int i = 0 ; i< this->accounts.size() ; i++)
+    {
+        for(int j= 0 ; j< this->accounts[i].getAccountNumbers().size() ; j++)
+        {
+            if(this->accounts[i].getAccountNumbers()[j] == receiverAccountNumber)
+            {
+                Accountindex = i;
+                accindex = j ;
+                cout << GREEN << "Receiver's account found!" << RESET << endl;
+                break;
+            }
+            
+        }
+    }
 
+
+    cout << BLUE << "Enter the amount to transfer: " << RESET;
+    cin >> amount;
+    cout << BLUE << "Enter your Pin: " << RESET;
+    cin >> pin;
+    if (pin != this->accounts[this->index].getPin()[this->choice])
+    {
+        cout << RED << "Invalid Pin. Please try again." << RESET << endl;
+        return -1;
+    }
+
+    if (amount <= 0)
+    {
+        cout << RED << "Amount must be greater than zero." << RESET << endl;
+        return -1;
+    }
+    if (amount > this->accounts[this->index].getBalance()[this->choice])
+    {
+        cout << RED << "Insufficient balance for transfer." << RESET << endl;
+        return -1;
+    }
+    this->accounts[this->index].getBalance()[this->choice] -= amount;
+    this->accounts[Accountindex].getBalance()[accindex] += amount;
+    cout << GREEN << "Transfer successful! " << amount << " has been transferred to " << receiverAccountNumber << "." << RESET << endl;
+    cout << CYAN << "Your new balance is: " << this->accounts[this->index].getBalance()[this->choice] << RESET << endl;
+    return 0;
+
+
+}
 
 int main()
 {
@@ -436,6 +516,7 @@ int main()
             cout << RED << "Invalid choice. Please try again." << RESET << endl;
         }
     } while (choice != 0);
-    
+      
      return 0;
 }
+ 
