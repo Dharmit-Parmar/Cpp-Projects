@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <algorithm>
 using namespace std;
 
 // Color codes
