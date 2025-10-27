@@ -1,180 +1,101 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <random>
 using namespace std;
 
- 
-#define RESET   "\033[0m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-#define CYAN    "\033[36m"
-#define MAGENTA "\033[35m"
-#define BOLD    "\033[1m"
-
-class Book
+struct Book
 {
-private:
-    string title, author;
-
-public:
-    void setDetails(const string t, const string a)
-    {
-        this->title = t;
-        this->author = a;
-    }
-
-    void readDetails() const
-    {
-        cout << CYAN << "Book Title  : " << RESET << this->title << endl;
-        cout << CYAN << "Book Author : " << RESET << this->author << endl;
-    }
-    string getTitle() const
-    {
-        return title;
-    }
-    string getAuthor() const
-    {
-        return author;
-    }
-    Book(string t, string a) : title(t), author(a) {}
+    string title;
+    string author;
+    string isbn;
+    bool isAvailable;
+    string borrowerId;
 };
 
-class Lib
+struct Member
+{
+    string name;
+    string memberId;
+    string contactInfo;
+    vector<string> borrowBooksId;
+};
+
+class Library
 {
 private:
     vector<Book> books;
+    vector<Member> members;
 
 public:
-    void addBook()
-    {
-        string t, a;
-        cin.ignore();
-        cout << GREEN << "\n=== Add a New Book ===\n" << RESET;
-        cout << "Enter Book Title: ";
-        getline(cin, t);
-        cout << "Enter Author Name: ";
-        getline(cin, a);
-        books.push_back(Book(t, a));
-        cout << GREEN << "Book added successfully!\n" << RESET;
-    }
+    string genrateIsbn();
 
-    void listOfBook()
-    {
-        cout << BLUE << "\n=== List of Books ===\n" << RESET;
-        if (books.empty())
-        {
-            cout << YELLOW << "No books in the library.\n" << RESET;
-            return;
-        }
-        for (int i = 0; i < books.size(); i++)
-        {
-            cout << MAGENTA << "\nBook #" << i + 1 << ":\n" << RESET;
-            books.at(i).readDetails();
-        }
-        cout << BLUE << "\nEnd of list.\n" << RESET;
-    }
-    void deleteBook();
-    void replaceBook();
+        string genrateMemberId();
 };
 
-void Lib::deleteBook()
-{
-    string t, a;
-    cin.ignore();
-    cout << RED << "\n=== Delete a Book ===\n" << RESET;
-    cout << "Enter Book Title to delete: ";
-    getline(cin, t);
-    cout << "Enter Author Name to delete: ";
-    getline(cin, a);
-
-    for (int i = 0; i < books.size(); i++)
+    string Library::genrateMemberId()
     {
-        if (books.at(i).getTitle() == t && books.at(i).getAuthor() == a)
+           
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 9);
+
+        std::string first12 = "";
+        for (int i = 0; i < 10; ++i)
         {
-            books.erase(books.begin() + i);
-            cout << RED << "Book deleted successfully.\n" << RESET;
-            --i;
-            break;
+            first12 += std::to_string(dis(gen));
         }
+        
+        // now we suffel all of that to make sure about true random
+
+        std::uniform_int_distribution<> ds(0, 9);
+
+        for (int i = 9; i!=0; i--)
+        {
+            int rad = ds(gen);
+
+            char temp = first12[i];
+            first12[i] = first12[rad];
+            first12[rad] = temp;
+        }
+        if(first12[0] == '0') {
+            first12[0] = random() % 9 + '1'; // ensure first digit is not zero
+         }
+        return first12;
     }
-}
 
-void Lib::replaceBook()
-{
-    string t, a;
-
-    cout << YELLOW << "\n=== Replace Book Details ===\n" << RESET;
-    cout << "Choose the book from the list below:\n";
-    this->listOfBook();
-    cout << "\n-----------------------------\n";
-    cin.ignore();
-    cout << "Enter Book Title to replace: ";
-    getline(cin, t);
-    cout << "Enter Author Name to replace: ";
-    getline(cin, a);
-
-    for (int i = 0; i < books.size(); i++)
+    string Library::genrateIsbn()
     {
-        if (books.at(i).getTitle() == t && books.at(i).getAuthor() == a)
+        
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 9);
+
+        std::string first12 = "978";
+        for (int i = 0; i < 9; ++i)
         {
-            cout << "\n-----------------------------\n";
-            cin.ignore();
-            cout << "Enter Book New Title : ";
-            getline(cin, t);
-            cout << "Enter Author New Name : ";
-            getline(cin, a);
-            books.at(i).setDetails(t, a);
-            cout << GREEN << "Book details updated successfully.\n" << RESET;
+            first12 += std::to_string(dis(gen));
         }
+        // now we suffel all of that to make sure about true random
+
+        std::uniform_int_distribution<> ds(3, 11);
+
+        for (int i = 11; i > 2; i--)
+        {
+            int rad = ds(gen);
+
+            char temp = first12[i];
+            first12[i] = first12[rad];
+            first12[rad] = temp;
+        }
+        return first12;
     }
-}
 
 int main()
 {
-    Lib lib;
-    int choice;
+    Library l;
+    cout << l.genrateMemberId() << "\t"<< l.genrateMemberId().length();
+    
 
-    cout << BOLD << CYAN << "==============================\n";
-    cout << "  Welcome to Book Library  \n";
-    cout << "==============================" << RESET << endl;
-
-    do
-    {
-        cout << BOLD << "\nMenu:\n" << RESET;
-        cout << " 1. Add Book\n";
-        cout << " 2. List Books\n";
-        cout << " 3. Delete Book\n";
-        cout << " 4. Replace Book\n";
-        cout << " 0. Exit\n";
-        cout << "------------------------------\n";
-        cout << "Enter your choice: ";
-        cin >> choice;
-
-        switch (choice)
-        {
-        case 1:
-            lib.addBook();
-            break;
-        case 2:
-            lib.listOfBook();
-            break;
-        case 3:
-            lib.deleteBook();
-            break;
-        case 4:
-            lib.replaceBook();
-            break;
-        case 0:
-            cout << CYAN << "\nExiting the library. Goodbye!\n" << RESET;
-            break;
-        default:
-            cout << RED << "Invalid choice. Please try again.\n" << RESET;
-        }
-
-    } while (choice != 0);
     return 0;
 }
-
-
