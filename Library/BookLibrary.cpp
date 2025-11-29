@@ -5,6 +5,8 @@
 #include <random>
 #include <algorithm>
 #include <iomanip>
+#include <fstream>
+#include <sstream>
 using namespace std;
 const string RESET = "\033[0m";
 const string RED = "\033[31m";
@@ -150,6 +152,8 @@ public:
         return false;
     }
     int viewBorrowedBooks(string mid);
+    bool writeDataToFile();
+    bool readDataFromFile();
 };
 string Library::genrateMemberId()
 {
@@ -268,14 +272,14 @@ int Library::LoginMember()
     cout << "   " << CYAN << BOLD << "╠════════════════════════════════════════════════════╣" << RESET << "\n\n";
 
     cout << "   " << YELLOW << "Enter member ID : OR Contact No." << RESET;
-    cin.ignore();
+    cin.clear();
     cin >> idd;
 
     int index = -1;
     if (idd.length() == 10)
     {
         string contact = idd;
-        string memberId = "";
+       memberId = "";
         {
             for (int i = 0; i < members.size(); i++)
             {
@@ -291,7 +295,7 @@ int Library::LoginMember()
                     index = i;
                     memberId = members[i].memberId;
                     cout << "   " << GREEN << BOLD << "✔ Member logged in successfully." << RESET << "\n";
-                    cout << "   " << BLUE << "Welcome, " << RESET << MAGENTA << members[i].name << RESET << "\n\n";
+                    cout << "   " << BLUE << "Welcome, " << RESET << MAGENTA << members[i].name << "\t" << memberId<< RESET << "\n\n";
                     break;
                 }
             }
@@ -424,6 +428,7 @@ int Library::borrowBook(string mid, int index)
     }
     books[bookIndex].isAvailable = false;
     books[bookIndex].borrowerId = mid;
+    
     members[index].borrowBooksId.push_back(books[bookIndex].isbn);
 
     cout << "\n";
@@ -569,9 +574,124 @@ vector<int> Library::searchBook(string mid)
 
     return index;
 }
+
+ bool Library::writeDataToFile(){
+    ofstream outFileForBooks("Books_data.txt");
+    ofstream outFileForMembers("Members_data.txt");
+
+
+    if (!outFileForMembers || !outFileForBooks)
+    {
+        cout << "   " << RED << "Error opening one or more files for writing." << RESET << endl;
+
+        return false;
+    }
+
+
+    outFileForBooks << "Books:\n";
+    for (const auto &book : books)
+    {
+
+        outFileForBooks << book.title << "," << book.author << "," << book.isbn << "," << book.isAvailable << "," << book.borrowerId << "\n";
+    }
+
+    outFileForMembers << "Members:\n";
+    for (const auto &member : members)
+    {
+
+        outFileForMembers << member.name << "," << member.memberId << "," << member.pin << "," << member.contactInfo;
+        for (const auto &borrowedIsbn : member.borrowBooksId)
+        {
+            outFileForMembers << "," << borrowedIsbn;
+        }
+        outFileForMembers << "\n";
+    }
+
+
+
+    cout << "   " << GREEN << "Library data saved to files successfully." << RESET << endl;
+    return true;
+ }
+
+
+bool Library::readDataFromFile() {
+    ifstream inFileForBooks("Books_data.txt");
+    ifstream inFileForMembers("Members_data.txt");
+
+    if (!inFileForMembers || !inFileForBooks) {
+        cout << "   " << RED << "Error opening data files for reading. Starting with empty state." << RESET << endl;
+        return false;
+    }
+
+
+    books.clear();
+    members.clear();
+
+    string line;
+    string segment;
+
+
+    getline(inFileForBooks, line);
+
+    while (getline(inFileForBooks, line)) {
+
+        stringstream ss(line);
+        Book newBook;
+
+
+        getline(ss, newBook.title, ',');
+
+        getline(ss, newBook.author, ',');
+        getline(ss, newBook.isbn, ',');
+
+        string isAvailableStr;
+        getline(ss, isAvailableStr, ',');
+
+        try {
+             newBook.isAvailable = stoi(isAvailableStr);
+        } catch (...) {
+
+             newBook.isAvailable = false;
+        }
+
+
+        getline(ss, newBook.borrowerId);
+
+        books.push_back(newBook);
+    }
+
+
+    getline(inFileForMembers, line);
+
+    while (getline(inFileForMembers, line)) {
+
+        stringstream ss(line);
+        Member newMember;
+
+        getline(ss, newMember.name, ',');
+        getline(ss, newMember.memberId, ',');
+        getline(ss, newMember.pin, ',');
+        getline(ss, newMember.contactInfo, ',');
+
+        string borrowedIsbn;
+        while (getline(ss, borrowedIsbn, ',')) {
+
+            if (!borrowedIsbn.empty()) {
+                 newMember.borrowBooksId.push_back(borrowedIsbn);
+            }
+        }
+
+        members.push_back(newMember);
+    }
+
+
+    cout << "   " << GREEN << "Library data loaded successfully." << RESET << endl;
+    return true;
+}
 int main()
 {
     Library lib;
+    lib.readDataFromFile();
     int choice = -1;
     cout << "\n";
     cout << "   " << CYAN << BOLD << "##############################################################" << RESET << "\n";
@@ -593,10 +713,12 @@ int main()
             cout << "   " << RED << "Please enter a number!" << RESET << "\n\n";
             continue;
         }
+        cin.ignore();
         if (choice == 0)
         {
             cout << "\n";
             cout << "   " << GREEN << "Goodbye. Thank you for using Book Library." << RESET << "\n";
+            lib.writeDataToFile();
             break;
         }
         switch (choice)
