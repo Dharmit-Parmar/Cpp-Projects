@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <cctype>
 const std::string RESET = "\033[0m";
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
@@ -502,10 +503,18 @@ std::vector<int> Library::searchBook()
     std::getline(std::cin, searchTerm);
     std::vector<int> index;
 
+    auto to_lower = [](std::string str)
+    {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str;
+    };
+
+    std::string lowerSearchTerm = to_lower(searchTerm);
+
     for (int i = 0; i < books.size(); i++)
     {
-        if ((books[i].title.find(searchTerm) != std::string::npos ||
-             books[i].author.find(searchTerm) != std::string::npos) &&
+        if ((to_lower(books[i].title).find(lowerSearchTerm) != std::string::npos ||
+             to_lower(books[i].author).find(lowerSearchTerm) != std::string::npos) &&
             books[i].isAvailable)
         {
             index.push_back(i);
